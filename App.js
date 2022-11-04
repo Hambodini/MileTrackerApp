@@ -10,14 +10,18 @@ import {
   SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as SplashScreen from 'expo-splash-screen';
 
-const key = "@MyApp:key";
+SplashScreen.preventAutoHideAsync();
+setTimeout(SplashScreen.hideAsync, 2000);
+
+const storeValueStringKey = "@MyApp:key1";
+const HeightTextKey = "@MyApp:key2";
 
 export default class App extends Component {
   state = {
     WeightText: '',
     HeightText: '',
-    storedValue: '',
     storeValueString: '',
   };
 
@@ -28,8 +32,9 @@ export default class App extends Component {
 
   onLoad = async () => {
     try {
-      const storedValue = await AsyncStorage.getItem(key);
-      this.setState({ storedValue });
+      const storeValueString = await AsyncStorage.getItem(storeValueStringKey);
+      const HeightText = await AsyncStorage.getItem(HeightTextKey);
+      this.setState({ storeValueString, HeightText });
     } catch (error) {
       Alert.alert('Error', 'There was an error while loading the data');
     }
@@ -37,12 +42,13 @@ export default class App extends Component {
 
   onSave = async () => {
     const { WeightText, HeightText} = this.state;
-    let storedValue = parseFloat(((WeightText / ( HeightText * HeightText ) ) * 703). toFixed(1));
+    let storedValue = parseFloat(((WeightText / ( HeightText * HeightText ) ) * 703).toFixed(1));
     let storeValueString = "Body Mass Index is " + storedValue
 
     this.setState({storeValueString})
     try {
-      await AsyncStorage.setItem(key, storedValue);
+      await AsyncStorage.setItem(storeValueStringKey, storeValueString);
+      await AsyncStorage.setItem(HeightTextKey, HeightText);
       Alert.alert('Saved', 'Successfully saved on device');
     } catch (error) {
       Alert.alert('Error', 'There was an error while saving the data');
