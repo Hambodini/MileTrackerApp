@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import {
-  Alert,
-  ScrollView,
+  useState, 
+  useEffect,
   View,
   StyleSheet,
   Text,
@@ -9,9 +9,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import Constants from "expo-constants";
 import * as SQLite from "expo-sqlite";
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
@@ -108,9 +106,7 @@ export default class App extends Component {
         tx.executeSql(`select * order by date desc;`, [], (_, { rows }) =>
           console.log(JSON.stringify(rows))
         );
-      },
-      null,
-      forceUpdate
+      }
     );
   }
 
