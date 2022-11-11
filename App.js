@@ -9,14 +9,57 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+import Constants from "expo-constants";
+import * as SQLite from "expo-sqlite";
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 setTimeout(SplashScreen.hideAsync, 2000);
 
-const storeValueStringKey = "@MyApp:key1";
-const HeightTextKey = "@MyApp:key2";
+function openDatabase() {
+  if (Platform.OS === "web") {
+    return {
+      transaction: () => {
+        return {
+          executeSql: () => {},
+        };
+      },
+    };
+  }
+
+  const db = SQLite.openDatabase("bmiDB.db");
+  return db;
+}
+
+const db = openDatabase();
+
+function Items() {
+  const [items, setItems] = useState(null);
+
+  useEffect(() => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        `select * from items`,
+        (_, { rows: { _array } }) => setItems(_array)
+      );
+    });
+  }, []);
+
+  if (items === null || items.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.sectionContainer}>
+      <Text style={styles.BMI}>BMI History</Text>
+      {items.map(({ id, date, bmi, weight, height }) => (
+        <Text style={styles.preview}>{date}: {bmi} (W:{weight}, H:{height})</Text>
+      ))}
+    </View>
+  );
+}
+
 
 export default class App extends Component {
   state = {
@@ -31,28 +74,44 @@ export default class App extends Component {
   }
 
   onLoad = async () => {
-    try {
-      const storeValueString = await AsyncStorage.getItem(storeValueStringKey);
-      const HeightText = await AsyncStorage.getItem(HeightTextKey);
-      this.setState({ storeValueString, HeightText });
-    } catch (error) {
-      Alert.alert('Error', 'There was an error while loading the data');
-    }
+    
+    db.transaction((tx) => {
+      // tx.executeSql(
+      //   "drop table items;"
+      // );
+      tx.executeSql(
+        "create table if not exists items (id integer primary key not null, date date, bmi number, height text, weight text);"
+      );
+    });
   }
 
   onSave = async () => {
     const { WeightText, HeightText} = this.state;
     let storedValue = parseFloat(((WeightText / ( HeightText * HeightText ) ) * 703).toFixed(1));
-    let storeValueString = "Body Mass Index is " + storedValue
+    let healthCondition
+    if (storedValue < 18.5) {
+      healthCondition = "Underweight"
+    } else if (storedValue > 18.5 && storedValue < 24.9) {
+      healthCondition = "Healthy"
+    }else if (storedValue > 25.0 && storedValue < 29.9) {
+      healthCondition = "Overweight"
+    }else if (storedValue > 30.0) {
+      healthCondition = "Obese"
+    }
+    let storeValueString = "Body Mass Index is " + storedValue + "("+healthCondition+")"
 
     this.setState({storeValueString})
-    try {
-      await AsyncStorage.setItem(storeValueStringKey, storeValueString);
-      await AsyncStorage.setItem(HeightTextKey, HeightText);
-      Alert.alert('Saved', 'Successfully saved on device');
-    } catch (error) {
-      Alert.alert('Error', 'There was an error while saving the data');
-    }
+
+    db.transaction(
+      (tx) => {
+        tx.executeSql("insert into items (bmi, height, weight) values (0, date('now'), ?, ?, ?)", [storedValue, HeightText, WeightText]);
+        tx.executeSql(`select * order by date desc;`, [], (_, { rows }) =>
+          console.log(JSON.stringify(rows))
+        );
+      },
+      null,
+      forceUpdate
+    );
   }
 
   onWeightChange = (WeightText) => {
@@ -85,13 +144,7 @@ export default class App extends Component {
             <Text style={styles.buttonText}>Compute BMI</Text>
           </TouchableOpacity>
           <Text style={styles.BMI}>{storeValueString}</Text>
-          <Text style={styles.preview}>
-          Assessing Your BMI{"\n"}
-          {"\t"}Underweight: less than 18.5{"\n"}
-          {"\t"}Underweight: 18.5 to 24.9{"\n"}
-          {"\t"}Underweight: 25.0 to 29.9{"\n"}
-          {"\t"}Underweight: 30.0 to higher
-          </Text>
+          <Items></Items>
           </View>
       </SafeAreaView>
     );
