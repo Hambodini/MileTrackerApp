@@ -1,7 +1,5 @@
-import React, { Component } from 'react';
-import {
-  useState, 
-  useEffect,
+import React, { Component, useState, useEffect } from 'react';
+import { 
   View,
   StyleSheet,
   Text,
@@ -38,7 +36,8 @@ function Items() {
   useEffect(() => {
     db.transaction((tx) => {
       tx.executeSql(
-        `select * from items`,
+        `select id, date(itemDate) as itemDate, bmi, height, weight from items order by itemDate desc;`,
+        [],
         (_, { rows: { _array } }) => setItems(_array)
       );
     });
@@ -47,12 +46,11 @@ function Items() {
   if (items === null || items.length === 0) {
     return null;
   }
-
   return (
-    <View style={styles.sectionContainer}>
-      <Text style={styles.BMI}>BMI History</Text>
-      {items.map(({ id, date, bmi, weight, height }) => (
-        <Text style={styles.preview}>{date}: {bmi} (W:{weight}, H:{height})</Text>
+    <View>
+      <Text style={styles.BMIHistoryTitle}>BMI History</Text>
+      {items.map(({ id, itemDate, bmi, weight, height }) => (
+        <Text style={styles.BMIHistoryText} key={id} >{itemDate}: {bmi} (W:{weight}, H:{height})</Text>
       ))}
     </View>
   );
@@ -72,13 +70,12 @@ export default class App extends Component {
   }
 
   onLoad = async () => {
-    
     db.transaction((tx) => {
-      // tx.executeSql(
-      //   "drop table items;"
-      // );
+        // tx.executeSql(
+        //   "drop table items;"
+        // );
       tx.executeSql(
-        "create table if not exists items (id integer primary key not null, date date, bmi number, height text, weight text);"
+        "create table if not exists items (id integer primary key not null, itemDate real, bmi number, height text, weight text);"
       );
     });
   }
@@ -96,14 +93,14 @@ export default class App extends Component {
     }else if (storedValue > 30.0) {
       healthCondition = "Obese"
     }
-    let storeValueString = "Body Mass Index is " + storedValue + "("+healthCondition+")"
+    let storeValueString = "Body Mass Index is " + storedValue + "\n("+healthCondition+")"
 
     this.setState({storeValueString})
 
     db.transaction(
       (tx) => {
-        tx.executeSql("insert into items (bmi, height, weight) values (0, date('now'), ?, ?, ?)", [storedValue, HeightText, WeightText]);
-        tx.executeSql(`select * order by date desc;`, [], (_, { rows }) =>
+        tx.executeSql("insert into items (itemDate, bmi, height, weight) values (julianday('now'), ?, ?, ?)", [storedValue, HeightText, WeightText]);
+        tx.executeSql(`select * from items order by itemDate desc;`, [], (_, { rows }) =>
           console.log(JSON.stringify(rows))
         );
       }
@@ -140,7 +137,7 @@ export default class App extends Component {
             <Text style={styles.buttonText}>Compute BMI</Text>
           </TouchableOpacity>
           <Text style={styles.BMI}>{storeValueString}</Text>
-          <Items></Items>
+          <Items />
           </View>
       </SafeAreaView>
     );
@@ -168,10 +165,26 @@ const styles = StyleSheet.create({
   BMI: {
     backgroundColor: '#fff',
     textAlign: 'center',
-    flex: 1,
+    //flex: 1,
     justifyContent: 'center',
-    height: 500,
+    //height: 500,
     fontSize: 28
+  },
+  BMIHistoryTitle: {
+    backgroundColor: '#fff',
+    textAlign: 'left',
+    //flex: 1,
+    justifyContent: 'center',
+    //height: 500,
+    fontSize: 28
+  },
+  BMIHistoryText: {
+    backgroundColor: '#fff',
+    textAlign: 'left',
+    //flex: 1,
+    justifyContent: 'center',
+    //height: 500,
+    fontSize: 18
   },
   preview: {
     backgroundColor: '#fff',
@@ -199,5 +212,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize:20,
     textAlign: 'center',
-  }
+  },
+  sectionContainer: {
+    marginBottom: 16,
+    marginHorizontal: 16,
+  },
+  sectionHeading: {
+    fontSize: 18,
+    marginBottom: 8,
+  },
 });
