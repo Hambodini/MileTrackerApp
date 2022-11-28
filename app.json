@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "BMICalculatorDB",
-    "slug": "BMICalculatorDB",
+    "name": "MileTrackerApp",
+    "slug": "MileTrackerApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/weights.png",
