@@ -1,5 +1,5 @@
 import React, { Component, useEffect, useState } from 'react';
-import { Text, View, Linking, Image, TextInput, StyleSheet, FlatList } from 'react-native';
+import { Text, View, SafeAreaView, TouchableOpacity, Linking, Image, TextInput, StyleSheet, FlatList } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
@@ -11,6 +11,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  input: {
+    backgroundColor: '#ecf0f1',
+    borderRadius: 3,
+    height: 40,
+    padding: 5,
+    marginBottom: 10,
+    fontSize:20,
   },
   title: {
     fontWeight: 'bold',
@@ -24,25 +32,51 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   button: {
-    margin: 10,
+    backgroundColor: '#34495e',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 3,
+    marginBottom: 30,
+    fontSize: 24
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize:20,
+    textAlign: 'center',
   },
   textInput: {
     color: 'grey',
     textAlign: 'center',
     width: 200,
+  },
+  MilesHistoryTitle: {
+    backgroundColor: '#fff',
+    textAlign: 'center',
+    justifyContent: 'center',
+    fontSize: 28
+  },
+  MilesHistoryText: {
+    backgroundColor: '#fff',
+    textAlign: 'left',
+    paddingLeft: 10,
+    justifyContent: 'center',
+    fontSize: 15
+  },
+  WhatWasStored: {
+    textAlign: 'center',
+    //flex: 1,
+    justifyContent: 'center',
+    //height: 500,
+    fontSize: 28
   }
 });
-
-const storeValueString = useState("");
-const miles = useState("");
-const routeName = useState("");
 
 function openDatabase() {
   if (Platform.OS === "web") {
     return {
       transaction: () => {
         return {
-          executeSql: () => {},
+          executeSql: () => { },
         };
       },
     };
@@ -72,80 +106,77 @@ function Items() {
   }
   return (
     <View>
-      <Text style={styles.milesHistoryTitle}>Miles History</Text>
+      <Text style={styles.MilesHistoryTitle}>Miles History</Text>
       {items.map(({ id, itemDate, miles, routeName }) => (
-        <Text style={styles.MilesHistoryText} key={id} >On {itemDate} your ran {miles} miles on route {routeName}</Text>
+        <Text style={styles.MilesHistoryText} key={id} >On {itemDate} your ran {miles} miles on {routeName}</Text>
       ))}
     </View>
   );
 }
 
-const onLoad = async () => {
-  db.transaction((tx) => {
-      // tx.executeSql(
-      //   "drop table items;"
-      // );
-    tx.executeSql(
-      "create table if not exists items (id integer primary key not null, itemDate real, miles number, routeName text);"
-    );
-  });
-}
+function MileEntry({ navigation }) {
 
-const onSave = async () => {
+  const [displayString, setDisplayString] = useState("");
+  const [miles, setMiles] = useState("");
+  const [routeName, setRouteName] = useState("");
 
-  storeValueString = "Your ran " + miles + " on route "+routeName+"."
+  onSave = async () => {
+    // let result
+    
+    // //miles check
+    // try {
+    //   result = parseInt(miles)
+    // } catch (Exception) {
+    //   setDisplayString("Miles needs to be a number")
+    // }
+    // //route check
+    // try {
+    //   result = parseInt(miles)
+    //   setDisplayString(displayString+" Routes needs to be a string")
+    // } catch (Exception) {
+    // }
 
-  db.transaction(
-    (tx) => {
-      tx.executeSql("insert into items (itemDate, miles, routeName) values (julianday('now'), ?, ?)", [MileText, routeName]);
-      tx.executeSql(`select * from items order by itemDate desc;`, [], (_, { rows }) =>
-        console.log(JSON.stringify(rows))
+    // if (displayString = "") {
+      db.transaction(
+        (tx) => {
+          tx.executeSql("insert into items (itemDate, miles, routeName) values (julianday('now'), ?, ?)", [miles, routeName]);
+          tx.executeSql(`select * from items order by itemDate desc;`, [], (_, { rows }) =>
+            console.log(JSON.stringify(rows))
+          );
+        }
       );
-    }
-  );
-}
 
-const onMilesChange = (MilesText) => {
-  miles = MilesText
-}
-const onRouteChange = (RouteText) => {
-  routeName = RouteText
-}
+      setDisplayString("Your ran " + miles + " miles on " + routeName + ".")
 
-function MileEntry() {
-  
-  useEffect(() => {
-    onLoad;
-  }, []);
-  
+    // }
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-    <View style={styles.content}>
-      <TextInput
-        style={styles.input}
-        onChangeText={newText => onMilesChange(newText)}
-        value={miles}
-        placeholder="Enter miles ran"
-      />
-                <TextInput
-        style={styles.input}
-        onChangeText={newText => onRouteChange(newText)}
-        value={routeName}
-        placeholder="Enter route name"
-      />
-      <TouchableOpacity onPress={onSave} style={styles.button}>
-        <Text style={styles.buttonText}>Save Info</Text>
-      </TouchableOpacity>
-      <Text style={styles.WhatWasStored}>{storeValueString}</Text>
-      <Items />
-      </View>
-  </SafeAreaView>
+        <TextInput
+          style={styles.input}
+          onChangeText={newText => setMiles(newText)}
+          value={miles}
+          placeholder="Enter miles ran"
+        />
+        <TextInput
+          style={styles.input}
+          onChangeText={newText => setRouteName(newText)}
+          value={routeName}
+          placeholder="Enter route name"
+        />
+        <TouchableOpacity onPress={onSave} style={styles.button}>
+          <Text style={styles.buttonText}>Save Info</Text>
+        </TouchableOpacity>
+        <Text style={styles.WhatWasStored}>{displayString}</Text>
+    </SafeAreaView>
   );
 }
 
-function MileDB() {
+function MileDB({ navigation }) {
   return (
-    <View style={styles.container}>
+    <View>
+      <Items></Items>
     </View>
   );
 }
@@ -196,7 +227,7 @@ const TipsList = [
 ];
 
 const renderListItem = ({ item }) => (
-  
+
   <Text style={styles.subTitle}>{item.title}</Text>
 );
 
@@ -212,7 +243,7 @@ function renderButton(title, url) {
   )
 }
 
-function HelpTips() {
+function HelpTips({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tips</Text>
@@ -228,6 +259,18 @@ function HelpTips() {
 const Drawer = createDrawerNavigator();
 
 export default function App() {
+
+  useEffect(() => {
+    db.transaction((tx) => {
+      // tx.executeSql(
+      //   "drop table items;"
+      // );
+      tx.executeSql(
+        "create table if not exists items (id integer primary key not null, itemDate real, miles number, routeName text);"
+      );
+    });
+  }, []);
+
   return (
     <NavigationContainer>
       <Drawer.Navigator
@@ -243,7 +286,6 @@ export default function App() {
         <Drawer.Screen name="Enter Miles" component={MileEntry} />
         <Drawer.Screen name="See Miles Entered" component={MileDB} />
         <Drawer.Screen name="See Help Tips" component={HelpTips} />
-
       </Drawer.Navigator>
     </NavigationContainer>
   );

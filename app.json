@@ -4,11 +4,11 @@
     "slug": "MileTrackerApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/weights.png",
+    "icon": "./assets/runnerIcon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/weights.png",
-      "resizeMode": "contain",
+      "image": "./assets/runnerSplash.png",
+      "resizeMode": "cover",
       "backgroundColor": "#34495e"
     },
     "updates": {
