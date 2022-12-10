@@ -12,13 +12,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  img:{
+
+  },
   input: {
     backgroundColor: '#ecf0f1',
     borderRadius: 3,
     height: 40,
     padding: 5,
     marginBottom: 10,
-    fontSize:20,
+    fontSize: 20,
   },
   title: {
     fontWeight: 'bold',
@@ -41,7 +44,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize:20,
+    fontSize: 20,
     textAlign: 'center',
   },
   textInput: {
@@ -119,56 +122,61 @@ function MileEntry({ navigation }) {
   const [displayString, setDisplayString] = useState("");
   const [miles, setMiles] = useState("");
   const [routeName, setRouteName] = useState("");
+  let isValid = true;
 
   onSave = async () => {
-    // let result
-    
-    // //miles check
-    // try {
-    //   result = parseInt(miles)
-    // } catch (Exception) {
-    //   setDisplayString("Miles needs to be a number")
-    // }
-    // //route check
-    // try {
-    //   result = parseInt(miles)
-    //   setDisplayString(displayString+" Routes needs to be a string")
-    // } catch (Exception) {
-    // }
+    let result
 
-    // if (displayString = "") {
-      db.transaction(
-        (tx) => {
-          tx.executeSql("insert into items (itemDate, miles, routeName) values (julianday('now'), ?, ?)", [miles, routeName]);
-          tx.executeSql(`select * from items order by itemDate desc;`, [], (_, { rows }) =>
-            console.log(JSON.stringify(rows))
-          );
-        }
-      );
+    //miles check
+    if (isNaN(miles)) {
+      setDisplayString(" miles needs to be a number")
+      isValid = false;
+    }
 
-      setDisplayString("Your ran " + miles + " miles on " + routeName + ".")
+    //route check
+    if (!isNaN(routeName)) {
+      setDisplayString(" Routes needs to be a string")
+      isValid = false;
+    }
 
-    // }
+    try {
+      if (isValid) {
+        db.transaction(
+          (tx) => {
+            tx.executeSql("insert into items (itemDate, miles, routeName) values (julianday('now'), ?, ?)", [miles, routeName]);
+            tx.executeSql(`select * from items order by itemDate desc;`, [], (_, { rows }) =>
+              console.log(JSON.stringify(rows))
+            );
+          }
+        );
+
+        setDisplayString("Your ran " + miles + " miles on " + routeName + ".")
+
+      }
+    } catch (Exception) {
+
+    }
   }
 
   return (
     <SafeAreaView style={styles.container}>
-        <TextInput
-          style={styles.input}
-          onChangeText={newText => setMiles(newText)}
-          value={miles}
-          placeholder="Enter miles ran"
-        />
-        <TextInput
-          style={styles.input}
-          onChangeText={newText => setRouteName(newText)}
-          value={routeName}
-          placeholder="Enter route name"
-        />
-        <TouchableOpacity onPress={onSave} style={styles.button}>
-          <Text style={styles.buttonText}>Save Info</Text>
-        </TouchableOpacity>
-        <Text style={styles.WhatWasStored}>{displayString}</Text>
+      <Image source={require('./assets/runnerImg.png')} style={styles.img}></Image>
+      <TextInput
+        style={styles.input}
+        onChangeText={newText => setMiles(newText)}
+        value={miles}
+        placeholder="Enter miles ran"
+      />
+      <TextInput
+        style={styles.input}
+        onChangeText={newText => setRouteName(newText)}
+        value={routeName}
+        placeholder="Enter route name"
+      />
+      <TouchableOpacity onPress={onSave} style={styles.button}>
+        <Text style={styles.buttonText}>Save Info</Text>
+      </TouchableOpacity>
+      <Text style={styles.WhatWasStored}>{displayString}</Text>
     </SafeAreaView>
   );
 }
